@@ -3,22 +3,22 @@ module vortex
 import net.http
 
 pub struct Route {
-	method string
-	path string
-  	handler HandlerFn =unsafe { nil }
+	method     string
+	path       string
+	handler    HandlerFn = unsafe { nil }
 	middleware []Middleware
 }
 
 pub struct RouterGroup {
 pub mut:
-	prefix string
+	prefix     string
 	middleware []Middleware
-	routes []Route
+	routes     []Route
 }
 
 pub struct Router {
 pub mut:
-	groups []RouterGroup
+	groups    []RouterGroup
 	not_found HandlerFn = fn (mut ctx Context) bool {
 		ctx.not_found()
 		return false
@@ -31,7 +31,7 @@ pub fn new_router() &Router {
 
 pub fn (mut r Router) group(prefix string, mids ...Middleware) &RouterGroup {
 	mut group := RouterGroup{
-		prefix: prefix
+		prefix:     prefix
 		middleware: mids
 	}
 	r.groups << group
@@ -40,14 +40,14 @@ pub fn (mut r Router) group(prefix string, mids ...Middleware) &RouterGroup {
 
 pub fn (mut g RouterGroup) handle(method string, path string, handler HandlerFn, mids ...Middleware) {
 	g.routes << Route{
-		method: method
-		path: g.prefix + path
-		handler: handler
+		method:     method
+		path:       g.prefix + path
+		handler:    handler
 		middleware: mids
 	}
 }
 
-pub fn (mut g RouterGroup) get(path string, handler HandlerFn, mids ...Middleware)  {
+pub fn (mut g RouterGroup) get(path string, handler HandlerFn, mids ...Middleware) {
 	g.handle('GET', path, handler, ...mids)
 }
 
@@ -56,10 +56,10 @@ pub fn (mut g RouterGroup) post(path string, handler HandlerFn, mids ...Middlewa
 }
 
 // TODO: Implement params later
-pub fn (r &Router) match(req http.Request) ?(HandlerFn, []Middleware, map[string]string){
+pub fn (r &Router) match(req http.Request) ?(HandlerFn, []Middleware, map[string]string) {
 	for group in r.groups {
 		for route in group.routes {
-			if req.method.str() == route.method && req.url == route.path  {
+			if req.method.str() == route.method && req.url == route.path {
 				mut combined_middleware := route.middleware.clone()
 				combined_middleware << group.middleware
 				return route.handler, combined_middleware, map[string]string{}
