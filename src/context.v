@@ -1,8 +1,10 @@
 module vortex
 
 import net.http
+import json
 import time
 
+@[heap]
 pub struct Context {
 pub mut:
 	req  http.Request
@@ -14,14 +16,24 @@ pub mut:
 	}
 
 	params     map[string]string
-	data       map[string]voidptr
+	data       map[string]string
 	start_mono i64 = time.sys_mono_now()
 	index      int = -1
 }
 
-pub fn (mut ctx Context) json(data string) {
-	ctx.resp.header.add(.content_type, 'application/json')
-	ctx.resp.body = data
+pub fn (mut ctx Context) json[T](data T) {
+	if !ctx.resp.header.contains(.content_type) {
+		ctx.resp.header.add(.content_type, 'application/json; charset-utf-8')
+	}
+	// if it's a string, assume it's already encoded
+	mut encoded := ''
+
+	if typeof(data).name == 'string' {
+		encoded = data.str()
+	} else {
+		encoded = json.encode(data)
+	}
+	ctx.resp.body = encoded
 }
 
 pub fn (mut ctx Context) text(str string) {
@@ -42,3 +54,4 @@ pub fn (mut ctx Context) server_error(msg string) {
 	ctx.status(.internal_server_error)
 	ctx.text('500 - ${msg}')
 }
+

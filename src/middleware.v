@@ -5,6 +5,7 @@ import time
 pub type HandlerFn = fn (mut Context) bool // return false to stop chain
 
 pub struct Middleware {
+pub:
 	handler HandlerFn = unsafe { nil }
 }
 
@@ -22,7 +23,6 @@ pub fn logging() Middleware {
 		}
 	}
 }
-
 
 // TODO: Complete implementation
 /*pub fn recorvery() Middleware {

@@ -2,23 +2,20 @@ module vortex
 
 import net.http
 
-pub struct Route {
-	method     string
-	path       string
-	handler    HandlerFn = unsafe { nil }
-	middleware []Middleware
-}
-
-pub struct RouterGroup {
+pub struct RouteNode {
 pub mut:
-	prefix     string
+	path string
 	middleware []Middleware
-	routes     []Route
+	handler HandlerFn = unsafe { nil }
+	children map[string]&RouteNode
+	param_child &RouteNode = unsafe { nil }
+	wildcard &RouteNode = unsafe { nil }
+	param_name string
 }
 
 pub struct Router {
 pub mut:
-	groups    []RouterGroup
+	trees map[string]&RouteNode
 	not_found HandlerFn = fn (mut ctx Context) bool {
 		ctx.not_found()
 		return false
@@ -26,25 +23,121 @@ pub mut:
 }
 
 pub fn new_router() &Router {
-	return &Router{}
+	return &Router{
+		trees: map[string]&RouteNode{},
+	}
 }
 
-pub fn (mut r Router) group(prefix string, mids ...Middleware) &RouterGroup {
-	mut group := RouterGroup{
-		prefix:     prefix
-		middleware: mids
+pub fn (mut r Router) register(method string, path string, handler HandlerFn, mids []Middleware) {
+	mut current_node := r.trees[method] or {
+		r.trees[method] = &RouteNode{}
+		r.trees[method]
 	}
-	r.groups << group
-	return &r.groups[r.groups.len - 1]
+
+	if path == '/' {
+		current_node.handler = handler
+		current_node.middleware = mids
+		return
+	}
+
+	segments := path.split('/')[1..]
+
+	for i, segment in segments {
+		if segment.len == 0 {
+			continue
+		}
+
+		mut child := &RouteNode{}
+		if segment.starts_with(':') {
+			if current_node.param_child == unsafe { nil } {
+				current_node.param_child = &RouteNode{
+					path: segment,
+					param_name: segment[1..],
+				}
+			}
+			child = current_node.param_child
+		} else if segment.starts_with('*') {
+			if current_node.wildcard == unsafe { nil } {
+				current_node.wildcard = &RouteNode{
+					path: segment,
+					param_name: segment[1..],
+				}
+			}
+			child = current_node.wildcard
+		} else {
+			if segment in current_node.children {
+				child = current_node.children[segment]
+			} else {
+				child = &RouteNode{
+					path: segment,
+				}
+				current_node.children[segment] = child
+			}
+		}
+
+		current_node = child
+
+		if i == segments.len - 1 {
+			current_node.handler = handler
+			current_node.middleware = mids
+		}
+	}
+}
+
+pub fn (r &Router) match(req http.Request) ?(HandlerFn, []Middleware, map[string]string) {
+	method := req.method.str()
+	path := req.url
+
+	if tree := r.trees[method] {
+		segments := path.split('/')[1..]
+		mut params := map[string]string{}
+
+		mut current_node := tree
+		for i, segment in segments {
+			if segment.len == 0 {
+				continue
+			}
+
+			if child := current_node.children[segment] {
+				current_node = child
+			} else if current_node.param_child != unsafe { nil } {
+				current_node = current_node.param_child
+				params[current_node.param_name] = segment
+			} else if current_node.wildcard != unsafe { nil } {
+				current_node = current_node.wildcard
+				params[current_node.param_name] = segments[i..].join('/')
+				break
+			} else {
+				return none
+			}
+		}
+
+		if current_node.handler != unsafe { nil } {
+			return current_node.handler, current_node.middleware, params
+		}
+	}
+
+	return none
+}
+
+pub struct RouterGroup {
+pub mut:
+	router &Router
+	prefix string
+	middleware []Middleware
+}
+pub fn (mut r Router) group(prefix string, mids ...Middleware) &RouterGroup {
+	return &RouterGroup{
+		router: r,
+		prefix: prefix,
+		middleware: mids,
+	}
 }
 
 pub fn (mut g RouterGroup) handle(method string, path string, handler HandlerFn, mids ...Middleware) {
-	g.routes << Route{
-		method:     method
-		path:       g.prefix + path
-		handler:    handler
-		middleware: mids
-	}
+	mut combined_middleware := g.middleware.clone()
+	combined_middleware << mids
+	g.router.register(method, g.prefix + path, handler, combined_middleware)
 }
 
 pub fn (mut g RouterGroup) get(path string, handler HandlerFn, mids ...Middleware) {
@@ -61,19 +154,4 @@ pub fn (mut g RouterGroup) put(path string, handler HandlerFn, mids ...Middlewar
 
 pub fn (mut g RouterGroup) delete(path string, handler HandlerFn, mids ...Middleware) {
 	g.handle('DELETE', path, handler, ...mids)
-}
-
-// TODO: Implement params later
-pub fn (r &Router) match(req http.Request) ?(HandlerFn, []Middleware, map[string]string) {
-	for group in r.groups {
-		for route in group.routes {
-			if req.method.str() == route.method && req.url == route.path {
-				mut combined_middleware := route.middleware.clone()
-				combined_middleware << group.middleware
-				return route.handler, combined_middleware, map[string]string{}
-			}
-		}
-	}
-
-	return none
 }

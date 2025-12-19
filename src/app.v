@@ -2,7 +2,9 @@ module vortex
 
 import time
 import net.http
+import net
 
+@[heap]
 pub struct App {
 pub mut:
 	router            &Router = new_router()
@@ -18,6 +20,7 @@ pub fn (mut app App) serve() ! {
 		handler: app
 		addr:    ':8080'
 	}
+
 	server.listen_and_serve()
 }
 
@@ -32,6 +35,7 @@ pub fn (app &App) handle(req http.Request) http.Response {
 		req:        req
 		resp:       resp
 		params:     map[string]string{}
+		data:       map[string]string{}
 		start_mono: time.sys_mono_now()
 	}
 
