@@ -11,12 +11,17 @@ fn main() {
 	mut api := app.router.group('/api/v1')
 
 	api.get('/hello', fn (mut ctx vortex.Context) bool {
-		ctx.json('{"message": "Hello from vortex!}", "time": "${time.now}"')
+		ctx.json('{"message": "Hello from vortex!", "time": "${time.now}"}')
 		return false
 	})
 
 	api.get('/ping', fn (mut ctx vortex.Context) bool {
 		ctx.text('pong')
+		return false
+	})
+
+	api.put('/put', fn (mut ctx vortex.Context) bool {
+		ctx.json('{"message": "updated something"}')
 		return false
 	})
 

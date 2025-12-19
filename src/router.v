@@ -55,6 +55,14 @@ pub fn (mut g RouterGroup) post(path string, handler HandlerFn, mids ...Middlewa
 	g.handle('POST', path, handler, ...mids)
 }
 
+pub fn (mut g RouterGroup) put(path string, handler HandlerFn, mids ...Middleware) {
+	g.handle('PUT', path, handler, ...mids)
+}
+
+pub fn (mut g RouterGroup) delete(path string, handler HandlerFn, mids ...Middleware) {
+	g.handle('DELETE', path, handler, ...mids)
+}
+
 // TODO: Implement params later
 pub fn (r &Router) match(req http.Request) ?(HandlerFn, []Middleware, map[string]string) {
 	for group in r.groups {

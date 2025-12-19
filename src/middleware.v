@@ -23,6 +23,7 @@ pub fn logging() Middleware {
 	}
 }
 
+
 // TODO: Complete implementation
 /*pub fn recorvery() Middleware {
 	return Middleware{
