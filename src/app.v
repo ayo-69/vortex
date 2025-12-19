@@ -1,7 +1,7 @@
 module vortex
 
+import time
 import net.http
-import net
 
 pub struct App {
 pub mut:
@@ -13,32 +13,31 @@ pub fn (mut app App) use(mids ...Middleware) {
 	app.global_middleware << mids
 }
 
-pub fn (app &App) serve() ! {
+pub fn (mut app App) serve() ! {
 	mut server := http.Server{
-		handler: app
+   	  	handler: app
 		addr: ':8080'
 	}
 	server.listen_and_serve()
 }
 
-pub fn (app &App) handle(mut req http.Request) http.Response {
+pub fn (app &App) handle(req http.Request) http.Response {
 	mut resp := http.Response{
 		status_code: 200
 		header: http.Header{}
-		body: []u8{}
+   		body: ''
 	}
 
 	mut ctx := Context{
 		req: req
 		resp: resp
 		params: map[string]string{}
-		start_mono: time.sys_mono_now()
+   		start_mono: time.sys_mono_now()
 	}
 
 	// match routes
-	if matched := app.router.match(req) {
-		handler, route_mids, params := matched
-		ctx.params = params
+  	if handler, route_mids, params := app.router.match(req) {
+		ctx.params = params.clone()
 
 		mut chain := []Middleware{}
 		chain << app.global_middleware

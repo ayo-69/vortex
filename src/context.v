@@ -7,7 +7,7 @@ pub struct Context {
 pub mut:
 	req http.Request
 	resp http.Response = http.Response{
-		header: http.new_header{}
+		header: http.new_header()
 		http_version: 'HTTP/1.1'
 		status_code: 200
 		status_msg: 'OK'

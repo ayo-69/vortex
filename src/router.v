@@ -5,7 +5,7 @@ import net.http
 pub struct Route {
 	method string
 	path string
-	handler HandlerFn
+  	handler HandlerFn =unsafe { nil }
 	middleware []Middleware
 }
 
@@ -29,7 +29,7 @@ pub fn new_router() &Router {
 	return &Router{}
 }
 
-pub fn (r mut Router) group(prefix string, mids ...Middleware) &RouterGroup {
+pub fn (mut r Router) group(prefix string, mids ...Middleware) &RouterGroup {
 	mut group := RouterGroup{
 		prefix: prefix
 		middleware: mids
@@ -38,7 +38,7 @@ pub fn (r mut Router) group(prefix string, mids ...Middleware) &RouterGroup {
 	return &r.groups[r.groups.len - 1]
 }
 
-pub fn (g mut RouterGroup) handle(method string, path string, handler HandlerFn, mids ...Middleware) {
+pub fn (mut g RouterGroup) handle(method string, path string, handler HandlerFn, mids ...Middleware) {
 	g.routes << Route{
 		method: method
 		path: g.prefix + path
@@ -47,11 +47,11 @@ pub fn (g mut RouterGroup) handle(method string, path string, handler HandlerFn,
 	}
 }
 
-pub fn (g mut RouterGroup) get(path string, handler HandlerFn, mids ...Middleware)  {
+pub fn (mut g RouterGroup) get(path string, handler HandlerFn, mids ...Middleware)  {
 	g.handle('GET', path, handler, ...mids)
 }
 
-pub fn (g mut RouterGroup) post(path string, handler HandlerFn, mids ...Middleware) {
+pub fn (mut g RouterGroup) post(path string, handler HandlerFn, mids ...Middleware) {
 	g.handle('POST', path, handler, ...mids)
 }
 
