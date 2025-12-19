@@ -5,18 +5,18 @@ import time
 
 pub struct Context {
 pub mut:
-	req http.Request
+	req  http.Request
 	resp http.Response = http.Response{
-		header: http.new_header{}
+		header:       http.new_header()
 		http_version: 'HTTP/1.1'
-		status_code: 200
-		status_msg: 'OK'
+		status_code:  200
+		status_msg:   'OK'
 	}
 
-	params map[string]string
-	data map[string]voidptr
+	params     map[string]string
+	data       map[string]voidptr
 	start_mono i64 = time.sys_mono_now()
-	index int = -1
+	index      int = -1
 }
 
 pub fn (mut ctx Context) json(data string) {

@@ -8,7 +8,7 @@ fn main() {
 
 	app.use(vortex.logging())
 
-	api := app.router.group('/api/v1')
+	mut api := app.router.group('/api/v1')
 
 	api.get('/hello', fn (mut ctx vortex.Context) bool {
 		ctx.json('{"message": "Hello from vortex!}", "time": "${time.now}"')
