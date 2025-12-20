@@ -53,12 +53,14 @@ fn main() {
 		return false
 	})
 
+	// AUTH
+
 	api.get('/auth/login', fn (mut ctx vortex.Context) bool {
 		user := auth.User{
 			id:       42
 			username: 'ayo'
 			email:    'ayo@ayo.com'
-			role:     'admin'
+			role:     'tester'
 		}
 
 		token := auth.generate_token(user)
@@ -93,6 +95,20 @@ fn main() {
 		ctx.json(user)
 		return false
 	}, auth.require_auth())
+
+	api.get('/admin/dashboard', fn (mut ctx vortex.Context) bool {
+		ctx.json({
+			'message': 'supreme user logged in'
+		})
+		return true
+	}, auth.require_auth(), auth.require_role('admin')) // must be logged in and must be an admin
+
+	api.get('/admin/another/dashboard', fn (mut ctx vortex.Context) bool {
+		ctx.json({
+			'message': 'supreme tester logged in'
+		})
+		return true
+	}, auth.require_auth(), auth.require_roles('admin', 'tester')) // must be logged in and must be an admin
 
 	app.serve() or { panic('Failed to start; ${err}') }
 }

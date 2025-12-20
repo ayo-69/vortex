@@ -52,14 +52,14 @@ pub fn verify_token(token string) !map[string]string {
 		3 { sig_str += '=' }
 		else {}
 	}
-	provided_sig := base64.url_decode(parts[2] + '==')
+	provided_sig := base64.url_decode(sig_str)
 
 	if !hmac.equal(expected_sig, provided_sig) {
 		return error('invalid signature')
 	}
 
-	mut payload_str := parts[2]
-	match sig_str.len % 4 {
+	mut payload_str := parts[1]
+	match payload_str.len % 4 {
 		2 { payload_str += '==' }
 		3 { payload_str += '=' }
 		else {}

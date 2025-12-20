@@ -32,4 +32,39 @@ pub fn require_auth() vortex.Middleware {
 	}
 }
 
-// TODO: Implement role based middleware
+// Single role
+pub fn require_role(required_role string) vortex.Middleware {
+	middleware_fn := fn (role string) vortex.Middleware {
+		return vortex.Middleware{
+			handler: fn [role] (mut ctx vortex.Context) bool {
+				user_role := ctx.data['role'] or { '' }
+				if user_role != role {
+					ctx.status(.forbidden)
+					ctx.json({
+						'error': 'forbidden: insufficient role'
+					})
+					return false
+				}
+				return true
+			}
+		}
+	}
+	return middleware_fn(required_role)
+}
+
+// Multiple roles
+pub fn require_roles(allowed_roles ...string) vortex.Middleware {
+	return vortex.Middleware{
+		handler: fn [allowed_roles] (mut ctx vortex.Context) bool {
+			role := ctx.data['role'] or { '' }
+			if role !in allowed_roles {
+				ctx.status(.forbidden)
+				ctx.json({
+					'error': 'forbidden: insufficient role'
+				})
+				return false
+			}
+			return true
+		}
+	}
+}
